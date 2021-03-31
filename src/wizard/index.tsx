@@ -1,17 +1,26 @@
 import { create, tsx } from '@dojo/framework/core/vdom';
-import { RenderResult } from '@dojo/framework/core/interfaces';
+import { RenderResult, WNode } from '@dojo/framework/core/interfaces';
 import theme from '../middleware/theme';
 import Icon from '../icon';
 import * as css from '../theme/default/wizard.m.css';
 import * as avatarCss from '../theme/default/avatar.m.css';
 import Avatar from '../avatar';
 
-export interface Step {
-	title?: RenderResult;
-	subTitle?: RenderResult;
+export interface StepWidgetProperties {
 	description?: RenderResult;
 	status?: StepStatus;
+	subTitle?: RenderResult;
+	title?: RenderResult;
 }
+
+const stepFactory = create()
+	.properties<StepWidgetProperties>()
+	.children<RenderResult>();
+
+export const Step = stepFactory(function Step({ children }) {
+	return children();
+});
+
 export interface WizardProperties {
 	/** A callback that will be notified when a step is clicked if this is clickable */
 	onStep?(step: number): void;
@@ -21,20 +30,13 @@ export interface WizardProperties {
 	clickable?: boolean;
 	/** The active step can be controlled to automatically set step status. Will be overridden by statuses provided to each step. If this property is not used, individual statuses should be passed to steps */
 	activeStep?: number;
-	/** The steps available to the wizard */
-	steps: Step[];
-}
-
-export interface WizardChildren {
-	/** Custom renderer for the wizardSteps, receives the checkbox group middleware and options */
-	step?(status: StepStatus | undefined, index: number, step: Step): RenderResult;
 }
 
 export type StepStatus = 'pending' | 'inProgress' | 'complete' | 'error';
 
 const factory = create({ theme })
 	.properties<WizardProperties>()
-	.children<WizardChildren | undefined>();
+	.children<WNode | WNode[]>();
 
 export default factory(function Wizard({ properties, children, middleware: { theme } }) {
 	const themedCss = theme.classes(css);
@@ -45,11 +47,10 @@ export default factory(function Wizard({ properties, children, middleware: { the
 		clickable = false,
 		classes,
 		variant,
-		steps,
 		theme: themeProp
 	} = properties();
 
-	const [{ step: stepRenderer } = { step: undefined }] = children();
+	const [...steps] = children();
 
 	const stepWrappers = steps.map((step, index) => {
 		let content;
@@ -65,14 +66,12 @@ export default factory(function Wizard({ properties, children, middleware: { the
 			defaultStatus = 'inProgress';
 		}
 
-		const { title, description, subTitle, status = defaultStatus } = step;
-
-		if (stepRenderer) {
-			return {
-				content: stepRenderer(defaultStatus, index, step),
-				status
-			};
-		}
+		const {
+			description,
+			status = defaultStatus,
+			subTitle,
+			title
+		} = step.properties as StepWidgetProperties;
 
 		switch (status) {
 			case 'complete':
@@ -118,6 +117,7 @@ export default factory(function Wizard({ properties, children, middleware: { the
 							<div classes={themedCss.stepSubTitle}>{subTitle}</div>
 						</div>
 						<div classes={themedCss.stepDescription}>{description}</div>
+						{step}
 					</div>
 				</virtual>
 			),

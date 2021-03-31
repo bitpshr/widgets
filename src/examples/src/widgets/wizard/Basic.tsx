@@ -1,6 +1,6 @@
 import { create, tsx } from '@dojo/framework/core/vdom';
 import Example from '../../Example';
-import Wizard from '@dojo/widgets/wizard';
+import Wizard, { Step } from '@dojo/widgets/wizard';
 import Button from '@dojo/widgets/button';
 import icache from '@dojo/framework/core/middleware/icache';
 
@@ -8,18 +8,6 @@ const factory = create({ icache }).properties();
 
 export default factory(function Basic({ middleware: { icache } }) {
 	let activeStep = icache.getOrSet('activeStep', 1);
-	const steps = [
-		{},
-		{
-			title: 'Title',
-			subTitle: 'SubTitle'
-		},
-		{
-			title: 'Title',
-			subTitle: 'SubTitle',
-			description: 'This is a description'
-		}
-	];
 	return (
 		<Example>
 			<Wizard
@@ -28,8 +16,11 @@ export default factory(function Basic({ middleware: { icache } }) {
 				onStep={(stepIndex) => {
 					icache.set('activeStep', stepIndex);
 				}}
-				steps={steps}
-			/>
+			>
+				<Step title="Foo" subTitle="This is foo" />
+				<Step title="Bar" subTitle="This is bar" />
+				<Step title="Baz" subTitle="This is baz" />
+			</Wizard>
 			<div>
 				<Button
 					onClick={() => {
